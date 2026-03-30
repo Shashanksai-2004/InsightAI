@@ -39,6 +39,13 @@ export const exportData = async (format = 'csv') => {
   return response;
 };
 
+export const generateReport = async (data) => {
+  const response = await api.post('/report', data, {
+    responseType: 'blob',
+  });
+  return response;
+};
+
 export const getHealth = async () => {
   const response = await api.get('/health');
   return response.data;

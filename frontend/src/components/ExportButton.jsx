@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Download, FileDown, Loader2 } from 'lucide-react';
-import { exportData } from '../services/api';
+import { Download, FileDown, Loader2, FileText } from 'lucide-react';
+import { exportData, generateReport } from '../services/api';
 
-export default function ExportButton() {
+export default function ExportButton({ latestResponse }) {
   const [isExporting, setIsExporting] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -12,9 +12,28 @@ export default function ExportButton() {
     setShowDropdown(false);
 
     try {
-      const response = await exportData(format);
+      if (format === 'pdf') {
+        const reportData = {
+          title: "InSightAI Executive Report",
+          summary: latestResponse?.answer || "No summary available.",
+          insights: latestResponse?.insights || [],
+          trends: latestResponse?.trends || [],
+          risks: latestResponse?.risks || [],
+          opportunities: latestResponse?.opportunities || [],
+          kpis: latestResponse?.kpis || [],
+        };
+        const response = await generateReport(reportData);
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `InsightAI_Report_${Date.now()}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        const response = await exportData(format);
 
-      if (format === 'csv') {
+        if (format === 'csv') {
         const blob = new Blob([response.data], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -29,7 +48,7 @@ export default function ExportButton() {
         a.href = url;
         a.download = `insightai_export_${Date.now()}.json`;
         a.click();
-        URL.revokeObjectURL(url);
+        }
       }
     } catch (error) {
       console.error('Export failed:', error);
@@ -74,6 +93,14 @@ export default function ExportButton() {
             boxShadow: 'var(--shadow-lg)',
           }}
         >
+          <button
+            onClick={() => handleExport('pdf')}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs hover:bg-[var(--bg-hover)] transition-colors"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            <FileText size={14} style={{ color: '#ef4444' }} />
+            Export as PDF Report
+          </button>
           <button
             onClick={() => handleExport('csv')}
             className="w-full flex items-center gap-2 px-4 py-2.5 text-xs hover:bg-[var(--bg-hover)] transition-colors"

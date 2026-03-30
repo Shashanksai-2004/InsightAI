@@ -23,6 +23,8 @@ from ingestion.processor import FileProcessor
 from retrieval.hybrid_retriever import HybridRetriever
 from generation.llm_engine import LLMEngine
 from generation.prompt_builder import PromptBuilder
+from generation.report_generator import ReportGenerator
+import time
 
 # ── Logging ──────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO)
@@ -52,6 +54,7 @@ file_processor = FileProcessor(str(DATA_DIR))
 retriever = HybridRetriever()
 llm_engine = LLMEngine()
 prompt_builder = PromptBuilder()
+report_gen = ReportGenerator()
 
 # Chat memory (session-based)
 chat_memory: dict[str, list] = {}
@@ -82,6 +85,8 @@ class InsightResponse(BaseModel):
     kpis: List[KPI] = []
     sources: List[str] = []
     session_id: str = "default"
+    performance: Optional[dict] = Field(default_factory=dict)
+    debug: Optional[dict] = Field(default_factory=dict)
 
 
 class HealthResponse(BaseModel):
@@ -189,11 +194,20 @@ async def ask_question(req: AskRequest):
         )
 
     session_id = req.session_id or "default"
-
+    
+    start_time = time.time()
+    logger.info(f"Processing question: {req.question}")
+    
     # Retrieve relevant context
+    retrieval_start = time.time()
     retrieved = retriever.search(req.question, top_k=int(os.getenv("TOP_K", "5")))
+    retrieval_time = (time.time() - retrieval_start) * 1000
+    
+    rerank_time = 0.0 # included in retrieval search
+    
     context_chunks = [r["text"] for r in retrieved]
     sources = list({r["metadata"].get("source", "Unknown") for r in retrieved})
+    rerank_scores = [float(r["score"]) for r in retrieved]
 
     # Gather structured data context
     struct_context = ""
@@ -222,7 +236,9 @@ async def ask_question(req: AskRequest):
     )
 
     # Generate response
+    llm_start = time.time()
     raw_response = await llm_engine.generate(prompt)
+    llm_time = (time.time() - llm_start) * 1000
 
     # Parse structured response
     parsed = _parse_llm_response(raw_response, sources, all_kpis_from_data)
@@ -236,6 +252,29 @@ async def ask_question(req: AskRequest):
     })
     chat_memory[session_id] = history
 
+    total_time = (time.time() - start_time) * 1000
+    
+    parsed.performance = {
+        "retrieval_ms": round(retrieval_time, 2),
+        "rerank_ms": round(rerank_time, 2),
+        "llm_ms": round(llm_time, 2),
+        "total_ms": round(total_time, 2)
+    }
+    
+    parsed.debug = {
+        "retrieved_docs": context_chunks,
+        "latency_ms": round(total_time, 2),
+        "model_used": os.getenv("LLM_PROVIDER", "openai"),
+        "rerank_scores": rerank_scores,
+        "logs": [
+            f"Retrieved {len(context_chunks)} chunks in {round(retrieval_time, 2)}ms",
+            f"LLM generation took {round(llm_time, 2)}ms"
+        ]
+    }
+    
+    if os.getenv("ENVIRONMENT", "development").lower() == "production":
+        parsed.debug = {}
+    
     parsed.session_id = session_id
     return parsed
 
@@ -354,6 +393,33 @@ async def export_data(format: str = Query("csv", enum=["csv", "json"])):
 @app.get("/files")
 async def list_files():
     return {"files": file_registry}
+
+
+class ReportRequest(BaseModel):
+    title: str = "Business Analysis Report"
+    summary: str = ""
+    insights: List[str] = []
+    trends: List[str] = []
+    risks: List[str] = []
+    opportunities: List[str] = []
+    recommendations: List[str] = []
+    kpis: List[dict] = []
+    sources: List[str] = []
+
+
+@app.post("/report")
+async def generate_report(req: ReportRequest):
+    try:
+        data = req.dict()
+        pdf_bytes = report_gen.generate_pdf(req.title, data)
+        return StreamingResponse(
+            iter([pdf_bytes]),
+            media_type="application/pdf",
+            headers={"Content-Disposition": "attachment; filename=insight_report.pdf"},
+        )
+    except Exception as e:
+        logger.error(f"Error generating report: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ── History ─────────────────────────────────────────────────────────────

@@ -7,6 +7,7 @@ import ChartPanel from './components/ChartPanel';
 import InsightPanel from './components/InsightPanel';
 import SourceCard from './components/SourceCard';
 import ExportButton from './components/ExportButton';
+import DebugPanel from './components/DebugPanel';
 import { uploadFiles, askQuestion, getHealth, clearAll, getFiles, getHistory } from './services/api';
 
 export default function App() {
@@ -242,7 +243,7 @@ export default function App() {
                 {showRightPanel ? '◀ Hide Panel' : '▶ Show Panel'}
               </button>
             )}
-            <ExportButton />
+            <ExportButton latestResponse={latestResponse} />
           </div>
         </header>
 
@@ -283,6 +284,13 @@ export default function App() {
           </AnimatePresence>
         </div>
       </main>
+      
+      {/* Debug Panel */}
+      <DebugPanel 
+        debugData={latestResponse?.debug} 
+        performanceData={latestResponse?.performance} 
+        rawResponse={latestResponse} 
+      />
     </div>
   );
 }

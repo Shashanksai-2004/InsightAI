@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(design-sprint)",
+      "Bash(npm install:*)",
+      "Bash(npx vite:*)"
+    ]
+  }
+}

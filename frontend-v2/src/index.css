@@ -1,0 +1,264 @@
+@import "tailwindcss";
+
+/* ══════════════ Dark theme (default) ══════════════ */
+:root {
+  /* Surfaces */
+  --th-surface-0: #09090b;
+  --th-surface-1: #0f0f12;
+  --th-surface-2: #17171c;
+  --th-surface-3: #1f1f26;
+  --th-surface-4: #28282f;
+
+  /* Text */
+  --th-text-heading: #fafafa;
+  --th-text-body: #d4d4d8;
+  --th-text-soft: #a1a1aa;
+  --th-text-muted: #71717a;
+  --th-text-dim: #52525b;
+  --th-text-faint: #3f3f46;
+
+  /* Borders */
+  --th-border: rgba(255, 255, 255, 0.06);
+  --th-border-hover: rgba(255, 255, 255, 0.12);
+  --th-border-subtle: rgba(255, 255, 255, 0.04);
+
+  /* Overlays */
+  --th-overlay: rgba(255, 255, 255, 0.03);
+  --th-overlay-light: rgba(255, 255, 255, 0.05);
+
+  /* Accent */
+  --th-accent: #6366f1;
+  --th-accent-light: #818cf8;
+  --th-accent-bg: rgba(99, 102, 241, 0.12);
+  --th-accent-border: rgba(99, 102, 241, 0.20);
+
+  /* Status */
+  --th-success: #22c55e;
+  --th-warning: #eab308;
+  --th-danger: #ef4444;
+
+  /* Scrollbar */
+  --th-scrollbar: #28282f;
+  --th-scrollbar-hover: #3f3f46;
+
+  /* Welcome grid */
+  --th-grid-glow: rgba(99, 102, 241, 0.05);
+  --th-grid-line: rgba(255, 255, 255, 0.018);
+
+  /* Markdown */
+  --th-md-text: #a1a1aa;
+  --th-md-heading: #e4e4e7;
+  --th-md-strong: #e4e4e7;
+  --th-md-code-bg: #1f1f26;
+  --th-md-code-text: #818cf8;
+  --th-md-pre-bg: #17171c;
+  --th-md-pre-border: rgba(255, 255, 255, 0.05);
+  --th-md-pre-text: #d4d4d8;
+  --th-md-blockquote: rgba(99, 102, 241, 0.3);
+  --th-md-marker: #52525b;
+  --th-md-th-bg: #17171c;
+  --th-md-td-border: rgba(255, 255, 255, 0.05);
+
+  /* Chart */
+  --th-chart-grid: rgba(255, 255, 255, 0.04);
+  --th-chart-axis: rgba(255, 255, 255, 0.06);
+  --th-chart-tick: #71717a;
+  --th-chart-tooltip-bg: #17171c;
+  --th-chart-tooltip-border: rgba(255, 255, 255, 0.08);
+  --th-chart-tooltip-text: #e4e4e7;
+
+  /* Loading dots */
+  --th-dot: #52525b;
+
+  /* Icon tints (file list, status) */
+  --th-icon-pdf: #f87171;
+  --th-icon-data: #34d399;
+  --th-icon-default: #71717a;
+  --th-status-on: #22c55e;
+  --th-status-off: #3f3f46;
+}
+
+/* ══════════════ Light theme ══════════════ */
+:root.light {
+  --th-surface-0: #ffffff;
+  --th-surface-1: #f9fafb;
+  --th-surface-2: #f3f4f6;
+  --th-surface-3: #e5e7eb;
+  --th-surface-4: #d1d5db;
+
+  --th-text-heading: #111827;
+  --th-text-body: #1f2937;
+  --th-text-soft: #4b5563;
+  --th-text-muted: #6b7280;
+  --th-text-dim: #9ca3af;
+  --th-text-faint: #d1d5db;
+
+  --th-border: rgba(0, 0, 0, 0.08);
+  --th-border-hover: rgba(0, 0, 0, 0.15);
+  --th-border-subtle: rgba(0, 0, 0, 0.04);
+
+  --th-overlay: rgba(0, 0, 0, 0.025);
+  --th-overlay-light: rgba(0, 0, 0, 0.04);
+
+  --th-accent: #4f46e5;
+  --th-accent-light: #6366f1;
+  --th-accent-bg: rgba(79, 70, 229, 0.08);
+  --th-accent-border: rgba(79, 70, 229, 0.20);
+
+  --th-success: #16a34a;
+  --th-warning: #ca8a04;
+  --th-danger: #dc2626;
+
+  --th-scrollbar: #d1d5db;
+  --th-scrollbar-hover: #9ca3af;
+
+  --th-grid-glow: rgba(79, 70, 229, 0.04);
+  --th-grid-line: rgba(0, 0, 0, 0.04);
+
+  --th-md-text: #374151;
+  --th-md-heading: #111827;
+  --th-md-strong: #111827;
+  --th-md-code-bg: #f3f4f6;
+  --th-md-code-text: #4f46e5;
+  --th-md-pre-bg: #f9fafb;
+  --th-md-pre-border: rgba(0, 0, 0, 0.06);
+  --th-md-pre-text: #1f2937;
+  --th-md-blockquote: rgba(79, 70, 229, 0.25);
+  --th-md-marker: #9ca3af;
+  --th-md-th-bg: #f3f4f6;
+  --th-md-td-border: rgba(0, 0, 0, 0.06);
+
+  --th-chart-grid: rgba(0, 0, 0, 0.06);
+  --th-chart-axis: rgba(0, 0, 0, 0.1);
+  --th-chart-tick: #6b7280;
+  --th-chart-tooltip-bg: #ffffff;
+  --th-chart-tooltip-border: rgba(0, 0, 0, 0.1);
+  --th-chart-tooltip-text: #1f2937;
+
+  --th-dot: #9ca3af;
+
+  --th-icon-pdf: #dc2626;
+  --th-icon-data: #16a34a;
+  --th-icon-default: #6b7280;
+  --th-status-on: #16a34a;
+  --th-status-off: #d1d5db;
+}
+
+/* ══════════════ Tailwind theme tokens ══════════════ */
+@theme inline {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Surfaces */
+  --color-surface-0: var(--th-surface-0);
+  --color-surface-1: var(--th-surface-1);
+  --color-surface-2: var(--th-surface-2);
+  --color-surface-3: var(--th-surface-3);
+  --color-surface-4: var(--th-surface-4);
+
+  /* Semantic text */
+  --color-heading: var(--th-text-heading);
+  --color-body: var(--th-text-body);
+  --color-soft: var(--th-text-soft);
+  --color-muted: var(--th-text-muted);
+  --color-dim: var(--th-text-dim);
+  --color-faint: var(--th-text-faint);
+
+  /* Borders */
+  --color-line: var(--th-border);
+  --color-line-hover: var(--th-border-hover);
+  --color-line-subtle: var(--th-border-subtle);
+
+  /* Overlays */
+  --color-overlay: var(--th-overlay);
+  --color-overlay-light: var(--th-overlay-light);
+
+  /* Accent */
+  --color-accent: var(--th-accent);
+  --color-accent-light: var(--th-accent-light);
+  --color-accent-bg: var(--th-accent-bg);
+  --color-accent-border: var(--th-accent-border);
+
+  /* Status */
+  --color-success: var(--th-success);
+  --color-warning: var(--th-warning);
+  --color-danger: var(--th-danger);
+}
+
+/* ══════════════ Base ══════════════ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--th-scrollbar) transparent;
+}
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--th-scrollbar); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--th-scrollbar-hover); }
+
+body {
+  margin: 0;
+  background: var(--th-surface-0);
+  color: var(--th-text-body);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ══════════════ Welcome grid ══════════════ */
+.welcome-grid {
+  background-image:
+    radial-gradient(circle at 50% 35%, var(--th-grid-glow) 0%, transparent 55%),
+    linear-gradient(var(--th-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--th-grid-line) 1px, transparent 1px);
+  background-size: 100% 100%, 32px 32px, 32px 32px;
+}
+
+/* ══════════════ Markdown ══════════════ */
+.md-body { line-height: 1.7; word-break: break-word; }
+.md-body p { margin-bottom: 0.75em; color: var(--th-md-text); }
+.md-body p:last-child { margin-bottom: 0; }
+.md-body h1, .md-body h2, .md-body h3, .md-body h4 {
+  color: var(--th-md-heading); font-weight: 600;
+  margin-top: 1.25em; margin-bottom: 0.5em;
+}
+.md-body h1 { font-size: 1.25rem; }
+.md-body h2 { font-size: 1.125rem; }
+.md-body h3 { font-size: 1rem; }
+.md-body strong { color: var(--th-md-strong); font-weight: 600; }
+.md-body em { color: var(--th-md-text); }
+.md-body ul, .md-body ol { margin: 0.5em 0; padding-left: 1.5em; }
+.md-body li { margin-bottom: 0.25em; color: var(--th-md-text); }
+.md-body li::marker { color: var(--th-md-marker); }
+.md-body code {
+  font-family: var(--font-mono); font-size: 0.85em;
+  background: var(--th-md-code-bg); color: var(--th-md-code-text);
+  padding: 0.15em 0.4em; border-radius: 4px;
+}
+.md-body pre {
+  background: var(--th-md-pre-bg); border: 1px solid var(--th-md-pre-border);
+  border-radius: 8px; padding: 0.875em 1em; overflow-x: auto; margin: 0.75em 0;
+}
+.md-body pre code {
+  background: none; padding: 0; color: var(--th-md-pre-text); font-size: 0.8em;
+}
+.md-body blockquote {
+  border-left: 2px solid var(--th-md-blockquote);
+  padding-left: 1em; margin: 0.75em 0; color: var(--th-text-muted);
+}
+.md-body a { color: var(--th-accent-light); text-decoration: none; }
+.md-body a:hover { text-decoration: underline; }
+.md-body table { width: 100%; border-collapse: collapse; margin: 0.75em 0; font-size: 0.875em; }
+.md-body th, .md-body td {
+  border: 1px solid var(--th-md-td-border); padding: 0.5em 0.75em; text-align: left;
+}
+.md-body th { background: var(--th-md-th-bg); color: var(--th-md-heading); font-weight: 500; }
+.md-body td { color: var(--th-md-text); }
+
+/* ══════════════ Loading dots ══════════════ */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+.pulse-dot-1 { animation: pulse-dot 1.4s ease-in-out infinite; }
+.pulse-dot-2 { animation: pulse-dot 1.4s ease-in-out 0.2s infinite; }
+.pulse-dot-3 { animation: pulse-dot 1.4s ease-in-out 0.4s infinite; }

@@ -1,180 +1,90 @@
-# InsightAI – AI Business Analyst
+# InsightAI — AI Business Analyst
 
-> **Enterprise-grade AI-powered Business Intelligence platform** that ingests multiple file formats, performs RAG-based analysis, extracts KPIs, visualizes trends, and exports Tableau-compatible data.
+> Upload business documents. Ask in plain English. Get cited answers with KPIs, trends, risks, and opportunities.
 
-![Platform](https://img.shields.io/badge/Platform-Web-blue) ![License](https://img.shields.io/badge/License-MIT-green) ![Status](https://img.shields.io/badge/Status-Production-brightgreen)
-
----
-
-## 🚀 Features
-
-- **Multi-format ingestion**: PDF, TXT/Markdown, CSV, Excel (.xlsx)
-- **Hybrid RAG retrieval**: BM25 + FAISS vector search with score fusion
-- **AI-powered analysis**: Structured insights, trends, risks, opportunities
-- **KPI extraction engine**: Automatic metric detection from tabular data
-- **Interactive charts**: Line, Bar, Area charts via Recharts
-- **Tableau export**: CSV and JSON export for external BI tools
-- **Chat memory**: Conversational context across questions
-- **Premium UI**: Dark mode, glassmorphism, Framer Motion animations
-- **Source citations**: Every claim backed by document references
+![Stack](https://img.shields.io/badge/stack-React%2019%20%2B%20FastAPI-1f3a5f) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
-## 🏗️ Architecture
+## Demo
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      FRONTEND (React)                       │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐      │
-│  │ Sidebar  │ │   Chat   │ │  Charts  │ │ Insights │      │
-│  │ + Upload │ │ Messages │ │ Recharts │ │  Panel   │      │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘      │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ HTTP / JSON
-┌──────────────────────────┴──────────────────────────────────┐
-│                    BACKEND (FastAPI)                         │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐      │
-│  │ Ingestion│ │ Retrieval│ │ LLM      │ │  Export  │      │
-│  │   PDF    │ │ BM25     │ │ OpenRouter│ │  CSV/JSON│      │
-│  │   CSV    │ │ FAISS    │ │ Prompt   │ │          │      │
-│  │   XLSX   │ │ Hybrid   │ │ Builder  │ │          │      │
-│  │   TXT    │ │          │ │          │ │          │      │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘      │
-└─────────────────────────────────────────────────────────────┘
-```
+**▶ [shashanksai-2004.github.io/InsightAI](https://shashanksai-2004.github.io/InsightAI/)** — 90-second auto-playing pitch. Hosted via GitHub Pages from [`insightai-pitch.html`](insightai-pitch.html).
+
+URL params: `?dev=1` (scene-jump panel), `?scene=N` (jump to scene N).
+
+Run locally: open [`insightai-pitch.html`](insightai-pitch.html) in any browser. No build, no deps.
+
+> Pages setup (one-time): repo **Settings → Pages → Source: `main` / root**.
 
 ---
 
-## 📋 Quick Start
+## Features
 
-### Prerequisites
-- Python 3.10+
-- Node.js 18+
-- npm
+- **Multi-format ingestion** — PDF, TXT, Markdown, CSV, XLSX
+- **Hybrid retrieval** — BM25 + FAISS with score fusion
+- **Structured output** — KPIs, insights, trends, risks, opportunities as fields, not chat blob
+- **Source citations** — every claim links to a source chunk
+- **Interactive charts** — line / bar / area, switchable live
+- **Multi-format export** — PDF report, CSV, JSON
+- **Dark + light themes**, persisted
 
-### 1. Backend Setup
+---
+
+## Quick Start
 
 ```bash
-cd backend
-pip install -r requirements.txt
-python app.py
+# Backend
+cd backend && pip install -r requirements.txt && python app.py
+# → http://localhost:8000
+
+# Frontend
+cd frontend-v2 && npm install && npm run dev
+# → http://localhost:5173
 ```
 
-The API server starts at `http://localhost:8000`
-
-### 2. Frontend Setup
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The frontend starts at `http://localhost:5173`
-
-### 3. Environment Variables
-
-Create a `.env` file in the project root:
+`.env` at repo root:
 
 ```env
-OPENROUTER_API_KEY=your_api_key_here
+OPENROUTER_API_KEY=your_key
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 LLM_MODEL=meta-llama/llama-3.1-8b-instruct:free
 EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
 ```
 
----
-
-## 🔌 API Reference
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | System health check |
-| `/upload` | POST | Upload files (multipart) |
-| `/ask` | POST | Ask a business question |
-| `/export` | GET | Export data (csv/json) |
-| `/files` | GET | List uploaded files |
-| `/clear` | POST | Clear all data |
-
-### Response Format
-
-```json
-{
-  "answer": "Analysis text...",
-  "insights": ["Key insight 1", "Key insight 2"],
-  "trends": ["Revenue grew 15% YoY"],
-  "risks": ["Market concentration risk"],
-  "opportunities": ["Expansion into APAC"],
-  "kpis": [
-    {
-      "metric": "Revenue",
-      "values": [100, 140, 160],
-      "labels": ["2021", "2022", "2023"]
-    }
-  ],
-  "sources": ["[1] annual_report.pdf", "[2] financials.csv"]
-}
-```
+`frontend/` (legacy) and `frontend-v2/` (active) both run against the same backend.
 
 ---
 
-## 📁 Project Structure
+## API
 
-```
-InsightAI/
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Chat.jsx          # Chat interface
-│   │   │   ├── Message.jsx       # Message rendering
-│   │   │   ├── ChartPanel.jsx    # KPI dashboard
-│   │   │   ├── InsightPanel.jsx  # Insights display
-│   │   │   ├── Sidebar.jsx       # Navigation + upload
-│   │   │   ├── Upload.jsx        # Drag & drop upload
-│   │   │   ├── ExportButton.jsx  # Data export
-│   │   │   └── SourceCard.jsx    # Citations
-│   │   ├── services/
-│   │   │   └── api.js            # API client
-│   │   ├── App.jsx               # Main application
-│   │   ├── main.jsx              # Entry point
-│   │   └── index.css             # Design system
-│   └── package.json
-├── backend/
-│   ├── ingestion/
-│   │   ├── pdf_loader.py         # PDF text extraction
-│   │   ├── text_loader.py        # TXT/MD loading
-│   │   ├── csv_loader.py         # CSV parsing + KPIs
-│   │   ├── excel_loader.py       # XLSX multi-sheet
-│   │   └── processor.py          # File orchestrator
-│   ├── retrieval/
-│   │   └── hybrid_retriever.py   # BM25 + FAISS
-│   ├── generation/
-│   │   ├── llm_engine.py         # OpenRouter LLM
-│   │   └── prompt_builder.py     # Structured prompts
-│   ├── app.py                    # FastAPI application
-│   └── requirements.txt
-├── data/                          # Uploaded files
-├── .env                           # Configuration
-├── README.md
-└── skills.md
-```
+| Endpoint  | Method | Purpose                                |
+|-----------|--------|----------------------------------------|
+| `/health` | GET    | Health + stats                         |
+| `/upload` | POST   | Upload files (multipart)               |
+| `/ask`    | POST   | Ask a question                         |
+| `/files`  | GET    | List files                             |
+| `/history`| GET    | Session history                        |
+| `/report` | POST   | Generate PDF report                    |
+| `/export` | GET    | Export `csv` or `json`                 |
+| `/clear`  | POST   | Clear all data                         |
+
+`/ask` returns `{ answer, insights[], trends[], risks[], opportunities[], kpis[], sources[], performance{} }`.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 19, Vite, Tailwind CSS v4 |
-| UI Components | Framer Motion, Recharts, Lucide Icons |
-| Backend | Python 3.10+, FastAPI, Pydantic v2 |
-| RAG Pipeline | BM25 (rank-bm25) + FAISS (faiss-cpu) |
-| Embeddings | sentence-transformers/all-MiniLM-L6-v2 |
-| LLM | OpenRouter (model-agnostic) |
-| File Processing | PyPDF2, Pandas, openpyxl |
+| Layer       | Tech                                                   |
+|-------------|--------------------------------------------------------|
+| Frontend    | React 19, Vite 6, Tailwind v4, Framer Motion, Recharts |
+| Backend     | FastAPI, Pydantic v2                                   |
+| Retrieval   | rank-bm25 + faiss-cpu hybrid                           |
+| Embeddings  | sentence-transformers/all-MiniLM-L6-v2                 |
+| LLM gateway | OpenRouter (model-agnostic)                            |
+| Files       | PyPDF2, Pandas, openpyxl, ReportLab                    |
 
 ---
 
-## 📝 License
+## License
 
-MIT License
+MIT

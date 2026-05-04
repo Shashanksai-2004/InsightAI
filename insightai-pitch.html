@@ -1,0 +1,1191 @@
+<!--
+  InsightAI — Investor Pitch Replay
+  Self-contained scripted "video" — open in any modern browser, double-click to play.
+  No external CSS / JS / fonts / images. Reload to replay.
+  Add ?dev=1 for scene-jump panel; add ?scene=N to jump straight to scene N.
+  Themed to match frontend-v2 (indigo on zinc).
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>InsightAI — Investor Pitch</title>
+<style>
+  :root {
+    /* Editorial / paper palette */
+    --bg: #f7f5f0;
+    --surface-1: #fbfaf6;
+    --surface-2: #ffffff;
+    --surface-3: #efece4;
+    --surface-4: #e2dfd6;
+    --text: #1a1a1a;
+    --text-body: #2b2b2b;
+    --text-soft: #4a4a4a;
+    --text-muted: #757575;
+    --text-dim: #9a9a9a;
+    --text-faint: #c8c5bd;
+    --line: rgba(0,0,0,0.10);
+    --line-hover: rgba(0,0,0,0.20);
+    --line-subtle: rgba(0,0,0,0.06);
+    --overlay: rgba(0,0,0,0.03);
+
+    --accent: #1f3a5f;
+    --accent-light: #2c4d7a;
+    --accent-bg: rgba(31,58,95,0.07);
+    --accent-border: rgba(31,58,95,0.22);
+
+    --success: #4a7c59;
+    --warning: #b8860b;
+    --danger: #a23b3b;
+    --info: #3a6b7a;
+    --magenta: #6b4a7a;
+
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--text-body); font-family: var(--font-sans); overflow: hidden; -webkit-font-smoothing: antialiased; }
+
+  #stage-wrap {
+    position: fixed; inset: 0; overflow: hidden;
+    background: var(--bg);
+  }
+  #stage {
+    position: absolute; top: 0; left: 0;
+    width: 1440px; height: 900px;
+    transform-origin: 0 0;
+    transition: transform 1200ms cubic-bezier(.65,.05,.36,1);
+  }
+
+  #cursor { position: fixed; top: 0; left: 0; width: 24px; height: 24px; pointer-events: none; z-index: 999; transform: translate(40px, 40px); transition: transform 900ms cubic-bezier(.65,.05,.36,1); }
+  #cursor svg { display: block; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.18)); }
+  #cursor.click::before { content: ""; position: absolute; left: 4px; top: 4px; width: 16px; height: 16px; border-radius: 999px; border: 2px solid var(--accent); animation: clickRipple .55s ease-out; }
+
+  #hud { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; background: rgba(255,255,255,0.85); border: 1px solid var(--line); color: var(--text); padding: 8px 14px; border-radius: 999px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; z-index: 1000; backdrop-filter: blur(10px); opacity: 0; transition: opacity 600ms ease; box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
+  #hud.shown { opacity: 1; }
+  #hud .progress { width: 220px; height: 4px; background: rgba(0,0,0,0.06); border-radius: 999px; overflow: hidden; }
+  #hud .progress > .bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent) 0%, var(--magenta) 100%); transition: width 200ms linear; }
+  #hud .badge { padding: 3px 8px; border-radius: 999px; background: rgba(0,0,0,0.04); font-size: 10px; color: var(--text-soft); }
+  #replay-btn { background: rgba(0,0,0,0.04); border: 1px solid var(--line); color: var(--text); padding: 4px 10px; border-radius: 999px; font-family: var(--font-mono); font-size: 10px; cursor: pointer; }
+  #replay-btn:hover { background: var(--accent-bg); border-color: var(--accent-border); }
+  #replay-btn.glow { animation: replayGlow 1.6s ease-in-out infinite; }
+
+  #devpanel { position: fixed; top: 60px; right: 14px; display: none; flex-direction: column; gap: 4px; background: rgba(255,255,255,0.95); border: 1px solid var(--line); color: var(--text); padding: 10px; border-radius: 8px; font-family: var(--font-mono); font-size: 10px; z-index: 1000; max-height: 80vh; overflow-y: auto; box-shadow: 0 12px 32px rgba(0,0,0,0.08); }
+  #devpanel.shown { display: flex; }
+  #devpanel button { background: rgba(0,0,0,0.04); border: 1px solid var(--line); color: var(--text); padding: 3px 8px; border-radius: 4px; font-family: var(--font-mono); font-size: 10px; cursor: pointer; text-align: left; }
+  #devpanel button:hover { background: var(--accent-bg); border-color: var(--accent-border); }
+
+  .explainer { font-family: var(--font-sans); font-size: 16px; line-height: 1.6; color: var(--text-body); max-width: 760px; text-align: center; opacity: 0; transition: opacity 700ms ease; }
+  .explainer.shown { opacity: 1; }
+  .explainer em { font-style: normal; color: var(--text); font-weight: 600; }
+  .explainer .muted { color: var(--text-muted); }
+
+  /* Scene 1 — cold open */
+  .s1-stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; }
+  .s1-logo { width: 72px; height: 72px; border-radius: 18px; background: var(--accent-bg); border: 1px solid var(--accent-border); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 700ms ease, transform 600ms cubic-bezier(.65,.05,.36,1); }
+  .s1-logo.shown { opacity: 1; }
+  .s1-logo svg { width: 36px; height: 36px; }
+  .s1-wordmark { font-family: var(--font-sans); font-size: 56px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); opacity: 0; transition: opacity 800ms ease, transform 600ms cubic-bezier(.65,.05,.36,1); }
+  .s1-wordmark.shown { opacity: 1; }
+  .s1-wordmark.up { transform: translateY(-200px); }
+  .s1-wordmark .ai { color: var(--accent-light); }
+  .s1-tagline { font-family: var(--font-sans); font-size: 20px; color: var(--text-soft); min-height: 28px; }
+  .s1-sub { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; color: var(--text-faint); min-height: 18px; }
+
+  /* Scene 2 — problem */
+  .s2-stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 40px; opacity: 0; transition: opacity 600ms ease; padding: 80px 60px; }
+  .s2-stage.shown { opacity: 1; }
+  .s2-row { display: flex; align-items: flex-start; justify-content: center; gap: 96px; }
+  .s2-stat { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; max-width: 380px; }
+  .s2-stat .label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; }
+  .s2-stat .value { font-family: var(--font-sans); font-size: 36px; font-weight: 600; line-height: 1.15; }
+  .s2-stat .sub { font-family: var(--font-sans); font-size: 14px; line-height: 1.5; margin-top: 2px; }
+  .s2-stat.dim .label { color: var(--text-muted); }
+  .s2-stat.dim .value { color: var(--text-muted); }
+  .s2-stat.dim .sub { color: var(--text-muted); }
+  .s2-stat.lit .label { color: var(--accent-light); }
+  .s2-stat.lit .value { color: var(--text); }
+  .s2-stat.lit .sub { color: var(--text-body); }
+  .s2-stat .ticker { font-family: var(--font-mono); font-size: 14px; color: var(--accent-light); margin-top: 6px; }
+
+  /* Scene 3 — pipeline loop */
+  .s3-stage { position: absolute; inset: 0; opacity: 0; transition: opacity 500ms ease; }
+  .s3-stage.shown { opacity: 1; }
+  .agent-box { position: absolute; width: 280px; padding: 18px 20px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; opacity: 0; }
+  .agent-box .icon { width: 28px; height: 28px; border-radius: 8px; background: var(--accent-bg); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+  .agent-box .icon svg { width: 16px; height: 16px; color: var(--accent-light); }
+  .agent-box .name { font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.14em; color: var(--text); }
+  .agent-box .cadence { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; color: var(--text-muted); margin-top: 6px; }
+  .agent-box .role { font-family: var(--font-sans); font-size: 12px; color: var(--text-body); margin-top: 10px; line-height: 1.5; }
+  .s3-arrows { position: absolute; inset: 0; pointer-events: none; }
+  .s3-arrows path { fill: none; stroke: var(--line-hover); stroke-width: 1.5; }
+  .s3-explainer { position: absolute; left: 50%; bottom: 80px; transform: translateX(-50%); }
+
+  /* Scene 4-5 — UPLOAD terminal (light, IDE-style) */
+  .term { position: absolute; left: 360px; top: 360px; width: 720px; height: 440px; background: #ffffff; border: 1px solid var(--line); border-radius: 14px; padding: 22px 26px; font-family: var(--font-mono); font-size: 13px; color: var(--text-body); overflow: hidden; opacity: 0; transition: opacity 400ms ease; box-shadow: 0 24px 60px rgba(0,0,0,0.10); }
+  .term.shown { opacity: 1; }
+  .term .prompt { color: var(--accent); }
+  .term .cmd { color: var(--text); font-weight: 600; }
+  .term .line { line-height: 1.7; white-space: pre-wrap; }
+  .term .line.dim { color: var(--text-muted); }
+  .term .line.warn { color: var(--warning); }
+  .term .line.good { color: var(--success); }
+  .term .line.info { color: var(--info); }
+  .term .pulse-dots { display: inline-block; }
+  .term .pulse-dots span { animation: pulse 1.2s ease-in-out infinite; }
+  .term .pulse-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .term .pulse-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  /* Scene 6 — ask + answer */
+  .s6-stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; opacity: 0; transition: opacity 500ms ease; padding: 60px; }
+  .s6-stage.shown { opacity: 1; }
+  .chat-wrap { width: 760px; display: flex; flex-direction: column; gap: 16px; }
+  .user-bubble { align-self: flex-end; max-width: 72%; background: var(--accent-bg); border: 1px solid var(--accent-border); border-radius: 18px 18px 4px 18px; padding: 12px 18px; font-size: 14px; color: var(--text); opacity: 0; transition: opacity 400ms ease; }
+  .user-bubble.shown { opacity: 1; }
+  .ai-bubble { display: flex; gap: 12px; opacity: 0; transition: opacity 400ms ease; }
+  .ai-bubble.shown { opacity: 1; }
+  .ai-bubble .avatar { width: 28px; height: 28px; border-radius: 8px; background: var(--accent-bg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ai-bubble .avatar svg { width: 14px; height: 14px; color: var(--accent-light); }
+  .ai-bubble .body { flex: 1; font-size: 14px; color: var(--text-body); line-height: 1.65; padding-top: 4px; }
+  .ai-bubble .body strong { color: var(--text); font-weight: 600; }
+  .ai-bubble .body code { font-family: var(--font-mono); font-size: 12px; background: var(--surface-2); color: var(--accent-light); padding: 2px 6px; border-radius: 4px; }
+  .source-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; opacity: 0; transition: opacity 400ms ease; }
+  .source-chips.shown { opacity: 1; }
+  .source-chip { display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-mono); font-size: 11px; color: var(--text-soft); background: var(--surface-2); border: 1px solid var(--line-subtle); padding: 3px 9px; border-radius: 6px; }
+  .source-chip svg { width: 10px; height: 10px; }
+
+  /* Scene 7 — KPI cards + chart */
+  .s7-stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; opacity: 0; transition: opacity 500ms ease; padding: 60px; }
+  .s7-stage.shown { opacity: 1; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; width: 920px; }
+  .kpi-card { padding: 14px 16px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); opacity: 0; transform: translateY(8px); transition: opacity 400ms ease, transform 400ms ease; }
+  .kpi-card.shown { opacity: 1; transform: translateY(0); }
+  .kpi-card .metric { font-family: var(--font-sans); font-size: 11px; color: var(--text-muted); }
+  .kpi-card .value { font-family: var(--font-sans); font-size: 22px; font-weight: 600; margin-top: 4px; }
+  .kpi-card .delta { font-family: var(--font-mono); font-size: 11px; margin-top: 4px; display: inline-flex; align-items: center; gap: 3px; }
+  .kpi-card .delta.up { color: var(--success); }
+  .kpi-card .delta.down { color: var(--danger); }
+  .chart-card { width: 920px; height: 260px; padding: 22px 24px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); opacity: 0; transition: opacity 500ms ease; position: relative; }
+  .chart-card.shown { opacity: 1; }
+  .chart-card .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .chart-card .title { font-family: var(--font-sans); font-size: 13px; color: var(--text-body); }
+  .chart-tabs { display: flex; gap: 4px; }
+  .chart-tab { padding: 4px 8px; border-radius: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); background: transparent; border: 1px solid transparent; cursor: pointer; transition: all 200ms ease; }
+  .chart-tab.active { color: var(--accent-light); background: var(--accent-bg); border-color: var(--accent-border); }
+  #chart-svg { width: 100%; height: 180px; }
+  .chart-grid line { stroke: rgba(0,0,0,0.05); stroke-width: 1; }
+  .chart-axis { stroke: rgba(0,0,0,0.10); stroke-width: 1; }
+  .chart-line { fill: none; stroke: var(--accent); stroke-width: 2.2; transition: opacity 400ms ease; }
+  .chart-area { fill: rgba(31,58,95,0.12); stroke: var(--accent); stroke-width: 2.2; transition: opacity 400ms ease; }
+  .chart-bar { fill: var(--accent); transition: opacity 400ms ease, height 600ms cubic-bezier(.65,.05,.36,1), y 600ms cubic-bezier(.65,.05,.36,1); }
+  .chart-tick { font-family: var(--font-mono); font-size: 9px; fill: var(--text-muted); }
+
+  /* Scene 9 — insights cascade */
+  .s9-stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; opacity: 0; transition: opacity 500ms ease; padding: 50px; }
+  .s9-stage.shown { opacity: 1; }
+  .s9-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 920px; }
+  .insight-card { padding: 16px 20px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); opacity: 0; transform: translateY(8px); transition: opacity 400ms ease, transform 400ms ease; }
+  .insight-card.shown { opacity: 1; transform: translateY(0); }
+  .insight-card .head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .insight-card .head .dot { width: 8px; height: 8px; border-radius: 999px; }
+  .insight-card .head .label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; }
+  .insight-card .head .count { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+  .insight-card ul { list-style: none; padding: 0; margin: 0; }
+  .insight-card li { font-size: 12px; line-height: 1.6; color: var(--text-body); padding: 4px 0 4px 12px; border-left: 2px solid var(--line); margin-bottom: 4px; }
+  .insight-card.insights .head .label { color: var(--warning); } .insight-card.insights .head .dot { background: var(--warning); }
+  .insight-card.trends .head .label { color: var(--info); } .insight-card.trends .head .dot { background: var(--info); }
+  .insight-card.risks .head .label { color: var(--danger); } .insight-card.risks .head .dot { background: var(--danger); }
+  .insight-card.opps .head .label { color: var(--success); } .insight-card.opps .head .dot { background: var(--success); }
+
+  /* Scene 10 — export menu */
+  .s10-stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; opacity: 0; transition: opacity 500ms ease; padding: 60px; }
+  .s10-stage.shown { opacity: 1; }
+  .export-host { display: flex; align-items: center; gap: 32px; }
+  .answer-mini { width: 360px; padding: 18px 22px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; opacity: 0; transition: opacity 400ms ease; }
+  .answer-mini.shown { opacity: 1; }
+  .answer-mini .h { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; color: var(--text-muted); }
+  .answer-mini .b { font-size: 13px; color: var(--text-body); margin-top: 8px; line-height: 1.55; }
+  .answer-mini .meta { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line-subtle); }
+  .arrow-line { width: 60px; height: 1px; border-top: 1px dashed var(--text-muted); }
+  .export-menu { display: flex; flex-direction: column; gap: 8px; opacity: 0; transition: opacity 400ms ease; }
+  .export-menu.shown { opacity: 1; }
+  .export-btn { display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; font-family: var(--font-mono); font-size: 12px; color: var(--text); min-width: 180px; opacity: 0; transition: opacity 350ms ease, background 200ms ease; }
+  .export-btn.shown { opacity: 1; }
+  .export-btn .ext { color: var(--accent-light); font-weight: 700; }
+  .export-btn .desc { color: var(--text-muted); font-family: var(--font-sans); font-size: 11px; margin-left: auto; }
+  .export-btn.flash { background: var(--accent-bg); border-color: var(--accent-border); }
+
+  /* Scene 11 — theme swap */
+  .s11-stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; opacity: 0; transition: opacity 500ms ease; padding: 60px; }
+  .s11-stage.shown { opacity: 1; }
+  .theme-mock { width: 700px; height: 380px; border-radius: 14px; overflow: hidden; display: flex; box-shadow: 0 24px 60px rgba(0,0,0,0.12); opacity: 0; transform: translateY(8px); transition: opacity 500ms ease, transform 500ms ease; border: 1px solid var(--line); }
+  .theme-mock.shown { opacity: 1; transform: translateY(0); }
+  .theme-mock .mock-side { width: 200px; padding: 16px; transition: background 600ms ease, border-color 600ms ease; }
+  .theme-mock .mock-main { flex: 1; padding: 24px; transition: background 600ms ease; }
+  .theme-mock .mock-row { height: 8px; border-radius: 4px; margin-bottom: 8px; transition: background 600ms ease; }
+  .theme-mock .mock-h { height: 14px; width: 60%; border-radius: 6px; margin-bottom: 14px; transition: background 600ms ease; }
+  .theme-mock .mock-card { height: 60px; border-radius: 10px; margin-bottom: 10px; transition: background 600ms ease, border-color 600ms ease; border-width: 1px; border-style: solid; }
+  .theme-mock.dark { background: #09090b; color: #fafafa; }
+  .theme-mock.dark .mock-side { background: #0f0f12; border-right: 1px solid rgba(255,255,255,0.06); }
+  .theme-mock.dark .mock-main { background: #09090b; }
+  .theme-mock.dark .mock-row { background: rgba(255,255,255,0.06); }
+  .theme-mock.dark .mock-h { background: #fafafa; }
+  .theme-mock.dark .mock-card { background: #17171c; border-color: rgba(255,255,255,0.06); }
+  .theme-mock.light { background: #ffffff; color: #111827; }
+  .theme-mock.light .mock-side { background: #f9fafb; border-right: 1px solid rgba(0,0,0,0.08); }
+  .theme-mock.light .mock-main { background: #ffffff; }
+  .theme-mock.light .mock-row { background: rgba(0,0,0,0.06); }
+  .theme-mock.light .mock-h { background: #111827; }
+  .theme-mock.light .mock-card { background: #f3f4f6; border-color: rgba(0,0,0,0.08); }
+  .theme-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; font-family: var(--font-mono); font-size: 11px; color: var(--text-soft); }
+  .theme-toggle .tswitch { width: 30px; height: 16px; border-radius: 999px; background: var(--surface-4); position: relative; transition: background 400ms ease; }
+  .theme-toggle .tswitch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent-light); transition: left 400ms ease; }
+  .theme-toggle.is-light .tswitch::after { left: 16px; }
+
+  /* Scene 12 — architecture pipeline */
+  .s12-stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; opacity: 0; transition: opacity 500ms ease; padding: 60px; }
+  .s12-stage.shown { opacity: 1; }
+  .pipeline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 1200px; }
+  .pipe-node { padding: 12px 16px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; font-family: var(--font-mono); font-size: 11px; color: var(--text-body); opacity: 0; transform: translateY(6px); transition: opacity 400ms ease, transform 400ms ease, border-color 300ms ease, color 300ms ease; }
+  .pipe-node.shown { opacity: 1; transform: translateY(0); }
+  .pipe-node.lit { border-color: var(--accent-border); color: var(--accent-light); background: var(--accent-bg); }
+  .pipe-arrow { color: var(--text-faint); font-family: var(--font-mono); font-size: 12px; opacity: 0; transition: opacity 300ms ease; }
+  .pipe-arrow.shown { opacity: 1; }
+
+  /* Scene 13 — moat */
+  .s13-stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; opacity: 0; transition: opacity 500ms ease; padding: 80px 40px; }
+  .s13-stage.shown { opacity: 1; }
+  .s13-host { display: flex; gap: 24px; }
+  .moat-card { width: 320px; min-height: 280px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 26px 28px; display: flex; flex-direction: column; gap: 14px; opacity: 0; transform: translateY(8px); transition: opacity 500ms ease, transform 500ms ease; }
+  .moat-card.shown { opacity: 1; transform: translateY(0); }
+  .moat-card .num { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; color: var(--accent-light); }
+  .moat-card .title { font-family: var(--font-sans); font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+  .moat-card .rule { width: 36px; height: 1px; background: var(--line-hover); }
+  .moat-card .body { font-family: var(--font-sans); font-size: 13px; line-height: 1.6; color: var(--text-body); }
+  .moat-card .footer { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); }
+
+  /* Scene 14 — closing status */
+  .s14-stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; opacity: 0; transition: opacity 500ms ease; padding: 60px; }
+  .s14-stage.shown { opacity: 1; }
+  .s14-block { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 28px 32px; min-width: 520px; }
+  .s14-block .row { display: grid; grid-template-columns: 240px 1fr; gap: 12px; padding: 10px 0; font-family: var(--font-mono); font-size: 13px; border-bottom: 1px solid var(--line-subtle); opacity: 0; transition: opacity 400ms ease; }
+  .s14-block .row.shown { opacity: 1; }
+  .s14-block .row:last-child { border-bottom: none; }
+  .s14-block .row .k { color: var(--text-muted); letter-spacing: 0.12em; font-size: 11px; align-self: center; }
+  .s14-block .row .v { color: var(--text); }
+  .s14-block .row .v .accent { color: var(--accent-light); }
+  .s14-closing { font-family: var(--font-sans); font-size: 22px; color: var(--text); opacity: 0; transition: opacity 700ms ease; text-align: center; font-weight: 500; }
+  .s14-closing.shown { opacity: 1; }
+  .s14-closing .small { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; color: var(--text-muted); display: block; margin-top: 10px; font-weight: 400; }
+
+  /* Animations */
+  @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(0.85); } }
+  @keyframes clickRipple { from { opacity: 0.9; transform: scale(0.6); } to { opacity: 0; transform: scale(2.2); } }
+  @keyframes replayGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(31,58,95,0.0); } 50% { box-shadow: 0 0 0 6px rgba(31,58,95,0.30); } }
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <span class="progress"><span class="bar"></span></span>
+  <span class="badge"><span id="step-num">0</span>/<span id="step-total">0</span></span>
+  <button id="replay-btn" onclick="window.location.reload()">↻ Replay</button>
+</div>
+
+<div id="devpanel"></div>
+
+<div id="stage-wrap">
+  <div id="stage">
+
+    <!-- Scene 1: cold open -->
+    <div class="s1-stage" id="s1">
+      <div class="s1-logo" id="s1-logo">
+        <svg viewBox="0 0 32 32" fill="none" stroke="#1f3a5f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 24 L14 14 L20 18 L28 6" />
+          <circle cx="6" cy="24" r="2" fill="#1f3a5f" stroke="none"/>
+          <circle cx="14" cy="14" r="2" fill="#1f3a5f" stroke="none"/>
+          <circle cx="20" cy="18" r="2" fill="#1f3a5f" stroke="none"/>
+          <circle cx="28" cy="6" r="2" fill="#1f3a5f" stroke="none"/>
+        </svg>
+      </div>
+      <div class="s1-wordmark" id="s1-wordmark">Insight<span class="ai">AI</span></div>
+      <div class="s1-tagline" id="s1-tagline"></div>
+      <div class="s1-sub" id="s1-sub"></div>
+    </div>
+
+    <!-- Scene 2: problem -->
+    <div class="s2-stage" id="s2" style="display:none;">
+      <div class="s2-row">
+        <div class="s2-stat dim">
+          <div class="label">WHAT YOU OWN</div>
+          <div class="value">47 tabs.<br/>Zero answers.</div>
+          <div class="sub">Reports, sheets, contracts. Static. Stale. Silent.</div>
+        </div>
+        <div class="s2-stat lit">
+          <div class="label">WHAT YOU NEED</div>
+          <div class="value">300 questions<br/>before lunch.</div>
+          <div class="sub">Each one: a scroll, a copy-paste, a Slack thread.</div>
+          <div class="ticker"><span id="s2-tick">0</span> asked since this slide started.</div>
+        </div>
+      </div>
+      <div class="explainer" id="s2-explainer">
+        <em>By the time the deck lands, the data moved.</em>
+      </div>
+    </div>
+
+    <!-- Scene 3: pipeline loop -->
+    <div class="s3-stage" id="s3" style="display:none;">
+      <svg class="s3-arrows" viewBox="0 0 1440 900" preserveAspectRatio="none" width="1440" height="900">
+        <defs><marker id="s3-head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(255,255,255,0.18)"/></marker></defs>
+        <path id="s3-arrow-1" d="M 640 410 Q 730 410 800 410" marker-end="url(#s3-head)"/>
+        <path id="s3-arrow-2" d="M 960 460 Q 960 520 960 580" marker-end="url(#s3-head)"/>
+        <path id="s3-arrow-3" d="M 800 630 Q 730 630 640 630" marker-end="url(#s3-head)"/>
+        <path id="s3-arrow-4" d="M 480 580 Q 480 520 480 460" marker-end="url(#s3-head)"/>
+      </svg>
+      <div class="agent-box" id="ab-upload"  style="left:360px; top:360px;">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7 L12 3 L21 7 L12 11 Z"/><path d="M3 12 L12 16 L21 12" opacity="0.6"/><path d="M3 17 L12 21 L21 17" opacity="0.35"/></svg></div>
+        <div class="name">INGEST</div><div class="cadence">PDF · CSV · XLSX</div><div class="role">Parse, chunk, embed.</div>
+      </div>
+      <div class="agent-box" id="ab-ask"     style="left:820px; top:360px;">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12 L6 12"/><path d="M8 8 L8 16"/><path d="M11 5 L11 19"/><path d="M14 9 L14 15"/><path d="M17 6 L17 18"/><path d="M20 10 L20 14"/></svg></div>
+        <div class="name">ASK</div><div class="cadence">NATURAL LANGUAGE</div><div class="role">One sentence. No SQL.</div>
+      </div>
+      <div class="agent-box" id="ab-analyze" style="left:820px; top:580px;">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="13" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/><path d="M7 7 L11 12 M17 7 L13 12 M11 14 L7 18 M13 14 L17 18"/></svg></div>
+        <div class="name">REASON</div><div class="cadence">RAG + SYNTHESIS</div><div class="role">KPIs, trends, risks, opportunities.</div>
+      </div>
+      <div class="agent-box" id="ab-export"  style="left:360px; top:580px;">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.5"/><path d="M8 12 L13 6"/><path d="M8 12 L13 12"/><path d="M8 12 L13 18"/><circle cx="15" cy="6" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></div>
+        <div class="name">SHIP</div><div class="cadence">PDF · CSV · JSON</div><div class="role">Answer, not screenshot.</div>
+      </div>
+
+      <div class="explainer s3-explainer" id="s3-explainer">
+        Four steps. One loop.
+      </div>
+
+      <div class="term" id="s4-term">
+        <div class="line"><span class="prompt">insightai $ </span><span class="cmd" id="s4-cmd"></span></div>
+        <div id="s4-output"></div>
+      </div>
+    </div>
+
+    <!-- Scene 6: ask + answer -->
+    <div class="s6-stage" id="s6" style="display:none;">
+      <div class="explainer" id="s6-intro">
+        <em>Ask in plain English.</em>
+      </div>
+      <div class="chat-wrap">
+        <div class="user-bubble" id="s6-q">What drove our Q3 revenue dip?</div>
+        <div class="ai-bubble" id="s6-a">
+          <div class="avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><!-- diamond prism --><path d="M12 3 L20 12 L12 21 L4 12 Z"/><path d="M4 12 L12 8 L20 12" opacity="0.6"/><path d="M12 8 L12 21" opacity="0.6"/></svg></div>
+          <div class="body" id="s6-body"></div>
+        </div>
+        <div class="source-chips" id="s6-sources">
+          <span class="source-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="12" r="2"/><path d="M8 12 L18 12"/><circle cx="18" cy="12" r="2" fill="currentColor"/></svg>Q3-financials.pdf</span>
+          <span class="source-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="12" r="2"/><path d="M8 12 L18 12"/><circle cx="18" cy="12" r="2" fill="currentColor"/></svg>apac-sales.xlsx</span>
+          <span class="source-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="12" r="2"/><path d="M8 12 L18 12"/><circle cx="18" cy="12" r="2" fill="currentColor"/></svg>churn-cohort-q3.csv</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scene 7: KPI grid + chart -->
+    <div class="s7-stage" id="s7" style="display:none;">
+      <div class="explainer" id="s7-intro">
+        <em>Structured analytics with every answer.</em>
+      </div>
+      <div class="kpi-grid" id="s7-kpis"></div>
+      <div class="chart-card" id="s7-chart">
+        <div class="head">
+          <span class="title">Revenue · last 6 quarters</span>
+          <div class="chart-tabs">
+            <button class="chart-tab active" data-type="line">line</button>
+            <button class="chart-tab" data-type="bar">bar</button>
+            <button class="chart-tab" data-type="area">area</button>
+          </div>
+        </div>
+        <svg id="chart-svg" viewBox="0 0 880 180" preserveAspectRatio="none"></svg>
+      </div>
+    </div>
+
+    <!-- Scene 9: insights cascade -->
+    <div class="s9-stage" id="s9" style="display:none;">
+      <div class="explainer" id="s9-intro">
+        <em>Filterable. Comparable. Exportable.</em>
+      </div>
+      <div class="s9-grid" id="s9-grid"></div>
+    </div>
+
+    <!-- Scene 10: export menu -->
+    <div class="s10-stage" id="s10" style="display:none;">
+      <div class="explainer" id="s10-intro">
+        <em>Same data. Three audiences.</em>
+      </div>
+      <div class="export-host">
+        <div class="answer-mini" id="s10-answer">
+          <div class="h">Q3 ANALYSIS · 2.1s</div>
+          <div class="b">APAC churn drove a 7.2% dip. Enterprise ARR offset 3 points.</div>
+          <div class="meta">3 sources · 6 KPIs</div>
+        </div>
+        <div class="arrow-line"></div>
+        <div class="export-menu" id="s10-menu">
+          <div class="export-btn" id="exp-pdf"><span class="ext">PDF</span> Report <span class="desc">board</span></div>
+          <div class="export-btn" id="exp-csv"><span class="ext">CSV</span> KPIs <span class="desc">analysts</span></div>
+          <div class="export-btn" id="exp-json"><span class="ext">JSON</span> Payload <span class="desc">data team</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scene 11: theme swap -->
+    <div class="s11-stage" id="s11" style="display:none;">
+      <div class="explainer" id="s11-intro">
+        <em>Either mode. Same answer.</em>
+      </div>
+      <div class="theme-mock dark" id="s11-mock">
+        <div class="mock-side">
+          <div class="mock-h"></div>
+          <div class="mock-row" style="width: 90%;"></div>
+          <div class="mock-row" style="width: 70%;"></div>
+          <div class="mock-row" style="width: 80%;"></div>
+        </div>
+        <div class="mock-main">
+          <div class="mock-h" style="width: 40%;"></div>
+          <div class="mock-card"></div>
+          <div class="mock-card"></div>
+          <div class="mock-card"></div>
+        </div>
+      </div>
+      <div class="theme-toggle" id="s11-toggle">
+        <span id="s11-mode-label">DARK</span>
+        <span class="tswitch"></span>
+      </div>
+    </div>
+
+    <!-- Scene 12: architecture pipeline -->
+    <div class="s12-stage" id="s12" style="display:none;">
+      <div class="explainer" id="s12-intro">
+        <em>Auditable end-to-end.</em>
+      </div>
+      <div class="pipeline" id="s12-pipe"></div>
+      <div class="explainer" id="s12-caption">
+        <em>Every claim links to a source chunk.</em>
+      </div>
+    </div>
+
+    <!-- Scene 13: moat -->
+    <div class="s13-stage" id="s13" style="display:none;">
+      <div class="explainer" id="s13-intro">
+        <em>Three reasons this is hard to copy.</em>
+      </div>
+      <div class="s13-host" id="s13-host"></div>
+    </div>
+
+    <!-- Scene 14: closing status -->
+    <div class="s14-stage" id="s14" style="display:none;">
+      <div class="s14-block" id="s14-block"></div>
+      <div class="s14-closing" id="s14-closing">
+        Upload. Ask. Decide.
+        <span class="small">↻ replay</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="cursor">
+  <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M3 2 L3 18 L7.5 14 L10.5 21 L13 20 L10 13 L16 13 Z" fill="#fafafa" stroke="#0a0a0d" stroke-width="1.4" stroke-linejoin="round"/>
+  </svg>
+</div>
+
+<script>
+/* ────────────────────────────────────────────────────────────────────
+   Engine primitives
+──────────────────────────────────────────────────────────────────── */
+
+const $ = (id) => document.getElementById(id);
+const stage = $('stage');
+const cursor = $('cursor');
+const stepNumEl = $('step-num');
+const progressBar = document.querySelector('#hud .bar');
+
+let stageTx = { sx: 1, tx: 0, ty: 0 };
+
+function applyCamera({ scale = 1, tx = 0, ty = 0, ms = 1200 } = {}) {
+  stage.style.transition = `transform ${ms}ms cubic-bezier(.65,.05,.36,1)`;
+  stage.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+  stageTx = { sx: scale, tx, ty };
+}
+
+function moveCursorTo(viewportX, viewportY, ms = 800) {
+  cursor.style.transition = `transform ${ms}ms cubic-bezier(.65,.05,.36,1)`;
+  cursor.style.transform = `translate(${viewportX}px, ${viewportY}px)`;
+}
+
+function clickFx() {
+  cursor.classList.add('click');
+  setTimeout(() => cursor.classList.remove('click'), 600);
+}
+
+const wait = (ms) => new Promise(r => setTimeout(r, ms));
+
+async function typeInto(targetEl, text, perCharMs = 24) {
+  targetEl.textContent = '';
+  for (const ch of text) {
+    targetEl.textContent += ch;
+    if (ch === ' ' && Math.random() < 0.05) await wait(perCharMs * 6);
+    else await wait(perCharMs + (Math.random() < 0.07 ? 80 : 0));
+  }
+}
+
+async function streamText(targetEl, text, perCharMs = 14, asHtml = false) {
+  targetEl[asHtml ? 'innerHTML' : 'textContent'] = '';
+  let acc = '';
+  for (const ch of text) {
+    acc += ch;
+    targetEl[asHtml ? 'innerHTML' : 'textContent'] = acc;
+    await wait(perCharMs + (Math.random() < 0.05 ? 90 : 0));
+  }
+}
+
+function fadeIn(el, ms = 450) {
+  el.style.transition = `opacity ${ms}ms ease, transform ${ms}ms ease`;
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(8px)';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    el.style.opacity = '1';
+    el.style.transform = 'translateY(0)';
+  }));
+}
+
+function tickCounter(el, from, to, ms = 1500, formatter = (n) => Math.round(n).toLocaleString()) {
+  const start = performance.now();
+  function frame(now) {
+    const t = Math.min(1, (now - start) / ms);
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = formatter(from + (to - from) * eased);
+    if (t < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function resetStageBetweenScenes() {
+  applyCamera({ scale: 1, tx: 0, ty: 0, ms: 600 });
+}
+
+const ALL_SCENE_IDS = ['s1','s2','s3','s6','s7','s9','s10','s11','s12','s13','s14'];
+const SCENE_DISPLAY = { s1:'flex', s2:'flex', s3:'block', s6:'flex', s7:'flex', s9:'flex', s10:'flex', s11:'flex', s12:'flex', s13:'flex', s14:'flex' };
+
+function showOnly(id) {
+  for (const sid of ALL_SCENE_IDS) {
+    const el = $(sid);
+    if (!el) continue;
+    if (sid === id) {
+      el.style.display = SCENE_DISPLAY[sid] || 'flex';
+    } else {
+      el.style.display = 'none';
+      el.classList.remove('shown');
+    }
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   Content constants
+──────────────────────────────────────────────────────────────────── */
+
+const UPLOAD_LOG_LINES = [
+  { cls: 'dim',  text: '[scan] 4 docs · 47 pages · 8,420 rows' },
+  { cls: '',     text: '[chunk] 312 blocks · 512 tokens each' },
+  { cls: 'info', text: '[embed] 1536-dim vectors' },
+  { cls: 'warn', text: '[think] ● ● ●', isThink: true },
+  { cls: 'good', text: '[ready] indexed. Ask anything.' },
+];
+
+const ANSWER_TEXT = `<strong>Q3 revenue down 7.2% QoQ.</strong> Driver: APAC churn, not pricing.
+
+• <strong>APAC churn 14%</strong> (was 6%) — Singapore SMB cohort, <code>churn-cohort-q3.csv</code>.
+• <strong>NA enterprise renewals</strong> offset 3 points, <code>Q3-financials.pdf</code> p.18.
+• <strong>Cross-sell flat at 11%</strong> vs 22% benchmark.`;
+
+const KPIS = [
+  { metric: 'Revenue',     value: '$8.4M',  delta: -7.2, dir: 'down' },
+  { metric: 'Gross margin', value: '71%',    delta: +1.1, dir: 'up'   },
+  { metric: 'CAC',         value: '$1,240', delta: +9.4, dir: 'down' },
+  { metric: 'NPS',         value: '52',     delta: +4,   dir: 'up'   },
+];
+
+const REVENUE_SERIES = [7.6, 8.1, 8.3, 8.7, 9.1, 8.4]; // millions
+const REVENUE_LABELS = ['Q2-24','Q3-24','Q4-24','Q1-25','Q2-25','Q3-25'];
+
+const INSIGHT_GROUPS = [
+  {
+    cls: 'insights', label: 'INSIGHTS',
+    items: [
+      'Q3 dip = APAC churn, not pricing',
+      'Singapore SMB = 78% of churn',
+    ],
+  },
+  {
+    cls: 'trends', label: 'TRENDS',
+    items: [
+      'Enterprise ARR up 18% QoQ',
+      'Time-to-value: 21 → 13 days',
+    ],
+  },
+  {
+    cls: 'risks', label: 'RISKS',
+    items: [
+      'Top 3 customers = 41% of revenue',
+      '$1.1M renewal at risk in Q4',
+    ],
+  },
+  {
+    cls: 'opps', label: 'OPPORTUNITIES',
+    items: [
+      'Cross-sell 11% vs 22% benchmark · $2.4M upside',
+      'EMEA pipeline 2.3× target',
+    ],
+  },
+];
+
+const PIPELINE_NODES = [
+  'Docs', 'Chunk', 'Embed', 'Store', 'Retrieve', 'Reason', 'Cite'
+];
+
+const MOAT_CARDS = [
+  {
+    num: '01',
+    title: 'STRUCTURED ANALYTICS',
+    body: 'KPIs, trends, risks — extracted as fields. Not a chat blob.',
+    footer: 'Filter. Compare. Export.',
+  },
+  {
+    num: '02',
+    title: 'EVERY ANSWER CITES',
+    body: 'No invented numbers. Every claim links to a source chunk.',
+    footer: 'Audit any decision.',
+  },
+  {
+    num: '03',
+    title: 'MULTI-DOC FUSION',
+    body: 'Reason across 50 reports at once. Not nearest-paragraph.',
+    footer: 'Single-doc demos are toys.',
+  },
+];
+
+const STATUS_DASHBOARD = [
+  ['DOCS',           { kind: 'tick', from: 0, to: 4 }],
+  ['CHUNKS',         { kind: 'tick', from: 0, to: 312 }],
+  ['QUESTIONS',      { kind: 'tick', from: 0, to: 28 }],
+  ['AVG LATENCY',    '2.1s'],
+  ['EXPORTS',        'PDF · CSV · JSON'],
+];
+
+/* ────────────────────────────────────────────────────────────────────
+   Chart drawing (line / bar / area)
+──────────────────────────────────────────────────────────────────── */
+
+function drawChart(type) {
+  const svg = $('chart-svg');
+  if (!svg) return;
+  const W = 880, H = 180, padL = 32, padR = 12, padT = 14, padB = 24;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const data = REVENUE_SERIES;
+  const labels = REVENUE_LABELS;
+  const max = Math.max(...data) * 1.08;
+  const min = Math.min(...data) * 0.92;
+  const span = Math.max(0.1, max - min);
+  const xStep = innerW / (data.length - 1);
+  const xFor = (i) => padL + i * xStep;
+  const yFor = (v) => padT + innerH - ((v - min) / span) * innerH;
+
+  let html = '';
+  // grid
+  html += '<g class="chart-grid">';
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (innerH * i / 4);
+    html += `<line x1="${padL}" y1="${y}" x2="${padL + innerW}" y2="${y}" />`;
+  }
+  html += '</g>';
+  // y-axis labels
+  for (let i = 0; i <= 4; i++) {
+    const v = max - (span * i / 4);
+    const y = padT + (innerH * i / 4);
+    html += `<text class="chart-tick" x="${padL - 6}" y="${y + 3}" text-anchor="end">$${v.toFixed(1)}M</text>`;
+  }
+  // x-axis labels
+  for (let i = 0; i < labels.length; i++) {
+    html += `<text class="chart-tick" x="${xFor(i)}" y="${H - 6}" text-anchor="middle">${labels[i]}</text>`;
+  }
+  // axis line
+  html += `<line class="chart-axis" x1="${padL}" y1="${padT + innerH}" x2="${padL + innerW}" y2="${padT + innerH}" />`;
+
+  if (type === 'bar') {
+    const barW = xStep * 0.55;
+    for (let i = 0; i < data.length; i++) {
+      const x = xFor(i) - barW / 2;
+      const y = yFor(data[i]);
+      const h = (padT + innerH) - y;
+      html += `<rect class="chart-bar" x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" />`;
+    }
+  } else if (type === 'area') {
+    let path = `M ${xFor(0)} ${yFor(data[0])}`;
+    for (let i = 1; i < data.length; i++) path += ` L ${xFor(i)} ${yFor(data[i])}`;
+    let areaPath = path + ` L ${xFor(data.length - 1)} ${padT + innerH} L ${xFor(0)} ${padT + innerH} Z`;
+    html += `<path class="chart-area" d="${areaPath}" />`;
+    // dots
+    for (let i = 0; i < data.length; i++) {
+      html += `<circle cx="${xFor(i)}" cy="${yFor(data[i])}" r="3" fill="#818cf8" />`;
+    }
+  } else { // line
+    let path = `M ${xFor(0)} ${yFor(data[0])}`;
+    for (let i = 1; i < data.length; i++) path += ` L ${xFor(i)} ${yFor(data[i])}`;
+    html += `<path class="chart-line" d="${path}" />`;
+    for (let i = 0; i < data.length; i++) {
+      html += `<circle cx="${xFor(i)}" cy="${yFor(data[i])}" r="3" fill="#818cf8" />`;
+    }
+  }
+
+  svg.innerHTML = html;
+}
+
+function setChartTab(type) {
+  document.querySelectorAll('.chart-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.type === type);
+  });
+  drawChart(type);
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   SCENES
+──────────────────────────────────────────────────────────────────── */
+
+const SCENES = [
+  {
+    title: '1. Cold open',
+    run: async () => {
+      $('s1-logo').classList.add('shown');
+      await wait(500);
+      $('s1-wordmark').classList.add('shown');
+      await wait(800);
+      await typeInto($('s1-tagline'), 'Ask your documents.', 30);
+      await wait(700);
+      await typeInto($('s1-sub'), 'FOR ANALYSTS WHO RAN OUT OF DASHBOARDS.', 22);
+      await wait(2000);
+    },
+  },
+  {
+    title: '2. Problem',
+    run: async () => {
+      $('s1-wordmark').classList.add('up');
+      $('s1-logo').style.opacity = '0';
+      await wait(500);
+      showOnly('s2');
+      requestAnimationFrame(() => $('s2').classList.add('shown'));
+      await wait(700);
+      tickCounter($('s2-tick'), 0, 142, 8000);
+      await wait(2500);
+      $('s2-explainer').classList.add('shown');
+      await wait(6500);
+    },
+  },
+  {
+    title: '3. Pipeline loop',
+    run: async () => {
+      showOnly('s3');
+      requestAnimationFrame(() => $('s3').classList.add('shown'));
+      applyCamera({ scale: 1, tx: 0, ty: -60, ms: 800 });
+      await wait(500);
+      const order = ['ab-upload', 'ab-ask', 'ab-analyze', 'ab-export'];
+      for (const id of order) {
+        fadeIn($(id), 500);
+        await wait(450);
+      }
+      await wait(300);
+      ['s3-arrow-1','s3-arrow-2','s3-arrow-3','s3-arrow-4'].forEach(id => {
+        const p = document.getElementById(id);
+        const len = p.getTotalLength();
+        p.style.strokeDasharray = len;
+        p.style.strokeDashoffset = len;
+        p.style.transition = `stroke-dashoffset 900ms cubic-bezier(.65,.05,.36,1)`;
+        requestAnimationFrame(() => requestAnimationFrame(() => { p.style.strokeDashoffset = '0'; }));
+      });
+      await wait(1100);
+      $('s3-explainer').classList.add('shown');
+      await wait(4500);
+    },
+  },
+  {
+    title: '4. Zoom UPLOAD — terminal',
+    run: async () => {
+      $('s3-explainer').classList.remove('shown');
+      await wait(300);
+      applyCamera({ scale: 1.6, tx: -380, ty: -160, ms: 900 });
+      await wait(950);
+      const term = $('s4-term');
+      term.classList.add('shown');
+      await wait(400);
+      const r = term.getBoundingClientRect();
+      moveCursorTo(r.left + 80, r.top + 30, 700);
+      await wait(750);
+      clickFx();
+      await typeInto($('s4-cmd'), 'insightai upload q3/*', 18);
+      await wait(700);
+    },
+  },
+  {
+    title: '5. UPLOAD streams',
+    run: async () => {
+      const out = $('s4-output');
+      out.innerHTML = '';
+      for (const line of UPLOAD_LOG_LINES) {
+        const div = document.createElement('div');
+        div.className = 'line ' + (line.cls || '');
+        out.appendChild(div);
+        if (line.isThink) {
+          div.innerHTML = '<span class="prompt">[think] </span><span class="pulse-dots"><span>●</span> <span>●</span> <span>●</span></span>';
+          await wait(1500);
+        } else {
+          await streamText(div, line.text, 12);
+          await wait(320);
+        }
+      }
+      await wait(1400);
+    },
+  },
+  {
+    title: '6. Ask + answer',
+    run: async () => {
+      $('s4-term').classList.remove('shown');
+      showOnly('s6');
+      resetStageBetweenScenes();
+      requestAnimationFrame(() => $('s6').classList.add('shown'));
+      await wait(500);
+      $('s6-intro').classList.add('shown');
+      await wait(1800);
+      $('s6-q').classList.add('shown');
+      await wait(900);
+      $('s6-a').classList.add('shown');
+      await wait(400);
+      const body = $('s6-body');
+      // Stream the answer with HTML support
+      body.innerHTML = '';
+      const html = ANSWER_TEXT;
+      let acc = '';
+      // Stream char-by-char but flush HTML so tags don't appear as text
+      let i = 0;
+      while (i < html.length) {
+        if (html[i] === '<') {
+          const close = html.indexOf('>', i);
+          acc += html.slice(i, close + 1);
+          i = close + 1;
+        } else {
+          acc += html[i];
+          i++;
+          if (i % 1 === 0) {
+            body.innerHTML = acc;
+            await wait(8 + (Math.random() < 0.04 ? 70 : 0));
+          }
+        }
+        body.innerHTML = acc;
+      }
+      await wait(800);
+      $('s6-sources').classList.add('shown');
+      await wait(4500);
+    },
+  },
+  {
+    title: '7. KPIs + chart',
+    run: async () => {
+      showOnly('s7');
+      resetStageBetweenScenes();
+      requestAnimationFrame(() => $('s7').classList.add('shown'));
+      await wait(500);
+      $('s7-intro').classList.add('shown');
+      await wait(1500);
+      const kpiHost = $('s7-kpis');
+      kpiHost.innerHTML = '';
+      for (const k of KPIS) {
+        const card = document.createElement('div');
+        card.className = 'kpi-card';
+        const arrow = k.dir === 'up' ? '▲' : '▼';
+        card.innerHTML = `
+          <div class="metric">${escapeHtml(k.metric)}</div>
+          <div class="value">${escapeHtml(k.value)}</div>
+          <div class="delta ${k.dir}">${arrow} ${Math.abs(k.delta)}${typeof k.delta === 'number' && Number.isInteger(k.delta) && k.metric !== 'NPS' ? '%' : (k.metric === 'NPS' ? '' : '%')}</div>
+        `;
+        kpiHost.appendChild(card);
+        requestAnimationFrame(() => card.classList.add('shown'));
+        await wait(180);
+      }
+      await wait(500);
+      $('s7-chart').classList.add('shown');
+      await wait(400);
+      drawChart('line');
+      await wait(1800);
+      // swap chart types
+      const tabs = ['bar', 'area', 'line'];
+      for (const t of tabs) {
+        const btn = document.querySelector(`.chart-tab[data-type="${t}"]`);
+        if (btn) {
+          const r = btn.getBoundingClientRect();
+          moveCursorTo(r.left + r.width/2, r.top + r.height/2, 500);
+          await wait(550);
+          clickFx();
+          setChartTab(t);
+          await wait(1400);
+        }
+      }
+      await wait(1500);
+    },
+  },
+  {
+    title: '9. Insights cascade',
+    run: async () => {
+      showOnly('s9');
+      resetStageBetweenScenes();
+      requestAnimationFrame(() => $('s9').classList.add('shown'));
+      await wait(500);
+      $('s9-intro').classList.add('shown');
+      await wait(1500);
+      const grid = $('s9-grid');
+      grid.innerHTML = '';
+      for (const g of INSIGHT_GROUPS) {
+        const card = document.createElement('div');
+        card.className = 'insight-card ' + g.cls;
+        card.innerHTML = `
+          <div class="head">
+            <span class="dot"></span>
+            <span class="label">${escapeHtml(g.label)}</span>
+            <span class="count">${g.items.length}</span>
+          </div>
+          <ul>${g.items.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>
+        `;
+        grid.appendChild(card);
+        requestAnimationFrame(() => card.classList.add('shown'));
+        await wait(450);
+      }
+      await wait(5500);
+    },
+  },
+  {
+    title: '10. Export menu',
+    run: async () => {
+      showOnly('s10');
+      resetStageBetweenScenes();
+      requestAnimationFrame(() => $('s10').classList.add('shown'));
+      await wait(500);
+      $('s10-intro').classList.add('shown');
+      await wait(1500);
+      $('s10-answer').classList.add('shown');
+      await wait(700);
+      $('s10-menu').classList.add('shown');
+      const ids = ['exp-pdf', 'exp-csv', 'exp-json'];
+      for (const id of ids) {
+        $(id).classList.add('shown');
+        await wait(220);
+      }
+      await wait(700);
+      // simulate hover/click sequence
+      for (const id of ids) {
+        const el = $(id);
+        const r = el.getBoundingClientRect();
+        moveCursorTo(r.left + 30, r.top + r.height/2, 450);
+        await wait(500);
+        el.classList.add('flash');
+        clickFx();
+        await wait(900);
+        el.classList.remove('flash');
+      }
+      await wait(2000);
+    },
+  },
+  {
+    title: '11. Theme swap',
+    run: async () => {
+      showOnly('s11');
+      resetStageBetweenScenes();
+      requestAnimationFrame(() => $('s11').classList.add('shown'));
+      await wait(500);
+      $('s11-intro').classList.add('shown');
+      await wait(1500);
+      $('s11-mock').classList.add('shown');
+      await wait(900);
+      const toggle = $('s11-toggle');
+      const mock = $('s11-mock');
+      const label = $('s11-mode-label');
+      // dark → light
+      const r1 = toggle.getBoundingClientRect();
+      moveCursorTo(r1.left + r1.width/2, r1.top + r1.height/2, 600);
+      await wait(700);
+      clickFx();
+      toggle.classList.add('is-light');
+      mock.classList.remove('dark'); mock.classList.add('light');
+      label.textContent = 'LIGHT';
+      await wait(2200);
+      // light → dark
+      clickFx();
+      toggle.classList.remove('is-light');
+      mock.classList.remove('light'); mock.classList.add('dark');
+      label.textContent = 'DARK';
+      await wait(2400);
+    },
+  },
+  {
+    title: '12. Architecture pipeline',
+    run: async () => {
+      showOnly('s12');
+      resetStageBetweenScenes();
+      requestAnimationFrame(() => $('s12').classList.add('shown'));
+      await wait(500);
+      $('s12-intro').classList.add('shown');
+      await wait(1800);
+      const host = $('s12-pipe');
+      host.innerHTML = '';
+      const nodes = [];
+      for (let i = 0; i < PIPELINE_NODES.length; i++) {
+        const n = document.createElement('div');
+        n.className = 'pipe-node';
+        n.textContent = PIPELINE_NODES[i];
+        host.appendChild(n);
+        nodes.push(n);
+        requestAnimationFrame(() => n.classList.add('shown'));
+        if (i < PIPELINE_NODES.length - 1) {
+          const a = document.createElement('div');
+          a.className = 'pipe-arrow';
+          a.textContent = '→';
+          host.appendChild(a);
+          requestAnimationFrame(() => a.classList.add('shown'));
+        }
+        await wait(280);
+      }
+      await wait(700);
+      // pulse through pipeline
+      for (let pass = 0; pass < 2; pass++) {
+        for (const n of nodes) {
+          n.classList.add('lit');
+          await wait(160);
+          n.classList.remove('lit');
+        }
+      }
+      await wait(500);
+      $('s12-caption').classList.add('shown');
+      await wait(4000);
+    },
+  },
+  {
+    title: '13. Moat',
+    run: async () => {
+      showOnly('s13');
+      resetStageBetweenScenes();
+      requestAnimationFrame(() => $('s13').classList.add('shown'));
+      await wait(500);
+      $('s13-intro').classList.add('shown');
+      await wait(1500);
+      const host = $('s13-host');
+      host.innerHTML = '';
+      for (const m of MOAT_CARDS) {
+        const c = document.createElement('div');
+        c.className = 'moat-card';
+        c.innerHTML = `
+          <div class="num">${m.num}</div>
+          <div class="title">${escapeHtml(m.title)}</div>
+          <div class="rule"></div>
+          <div class="body">${escapeHtml(m.body)}</div>
+          <div class="footer">${escapeHtml(m.footer)}</div>
+        `;
+        host.appendChild(c);
+        requestAnimationFrame(() => c.classList.add('shown'));
+        await wait(450);
+      }
+      await wait(6500);
+    },
+  },
+  {
+    title: '14. Status — closing',
+    run: async () => {
+      showOnly('s14');
+      resetStageBetweenScenes();
+      requestAnimationFrame(() => $('s14').classList.add('shown'));
+      await wait(600);
+      const block = $('s14-block');
+      block.innerHTML = '';
+      for (const [k, v] of STATUS_DASHBOARD) {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.innerHTML = `<span class="k">${k}</span><span class="v"></span>`;
+        block.appendChild(row);
+        requestAnimationFrame(() => row.classList.add('shown'));
+        const valEl = row.querySelector('.v');
+        if (typeof v === 'object' && v.kind === 'tick') {
+          tickCounter(valEl, v.from, v.to, 2000);
+        } else {
+          valEl.textContent = v;
+        }
+        await wait(280);
+      }
+      await wait(2200);
+      $('s14-closing').classList.add('shown');
+      await wait(1200);
+      $('replay-btn').classList.add('glow');
+    },
+  },
+];
+
+/* ────────────────────────────────────────────────────────────────────
+   Driver
+──────────────────────────────────────────────────────────────────── */
+
+async function play(startAt = 0) {
+  $('step-total').textContent = SCENES.length;
+  for (let i = 0; i < startAt; i++) {
+    const sc = SCENES[i];
+    stepNumEl.textContent = (i + 1);
+    progressBar.style.width = (((i + 1) / SCENES.length) * 100) + '%';
+    try { await Promise.race([sc.run(), wait(50)]); } catch (e) { /* ff */ }
+  }
+  for (let i = startAt; i < SCENES.length; i++) {
+    const sc = SCENES[i];
+    stepNumEl.textContent = (i + 1);
+    progressBar.style.width = (((i + 1) / SCENES.length) * 100) + '%';
+    try { await sc.run(); }
+    catch (e) { console.error('scene-error', sc.title, e); }
+  }
+}
+
+function readSceneParam() {
+  const url = new URL(window.location.href);
+  const n = parseInt(url.searchParams.get('scene') || '', 10);
+  return Number.isFinite(n) && n >= 1 && n <= SCENES.length ? n - 1 : 0;
+}
+
+function setupDevPanel() {
+  const url = new URL(window.location.href);
+  if (url.searchParams.get('dev') !== '1') return;
+  const panel = $('devpanel');
+  panel.classList.add('shown');
+  for (let i = 0; i < SCENES.length; i++) {
+    const b = document.createElement('button');
+    b.textContent = `[${i + 1}] ${SCENES[i].title}`;
+    b.onclick = () => { window.location.href = `?scene=${i + 1}&dev=1`; };
+    panel.appendChild(b);
+  }
+}
+
+window.addEventListener('load', () => {
+  moveCursorTo(60, 80, 0);
+  setupDevPanel();
+  // wire chart tabs (manual click after auto-play)
+  document.querySelectorAll('.chart-tab').forEach(t => {
+    t.addEventListener('click', () => setChartTab(t.dataset.type));
+  });
+  setTimeout(() => $('hud').classList.add('shown'), 800);
+  setTimeout(() => play(readSceneParam()), 1200);
+});
+</script>
+</body>
+</html>
